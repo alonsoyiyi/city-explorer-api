@@ -1,29 +1,37 @@
 require('dotenv').config();
+const axios = require('axios');
 const express = require('express');
 const cors = require('cors');
-const weather = require('./data/weather.json');
+
 
 const app = express();
 app.use(cors());
 
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+const WEATHER_API_URL = `https://api.weatherbit.io/v2.0/current/weather`;
 const PORT = process.env.PORT || 3001;
 
 app.get('/weather', handleWeather);
+app.get('/movie',handleMovie);
 app.use('*', (request, response) => response.status(404).send('Page not found :C'));
-function handleWeather(request, response) {
-    let { searchQuery } = request.query;
 
-    const city = weather.find( city => city.city_name.toLowerCase() === searchQuery.toLowerCase());
+async function handleWeather(request, response) {
+    let { latitude, longitude } = request.query;
 
     try {
-        const weatherArray = city.data.map(day => new Forecast(day));
-        response.status(200).send(weatherArray);
+        const weatherResponde = await axios.get(`${WEATHER_API_URL}?lat=${latitude}&lon=${longitude}&key=${WEATHER_API_KEY}&include=minutely`);
+        const weahterData=weatherResponde.data.map(day => new Forecast(day));
+        console.log(weahterData);
+        response.status(200).send(weahterData);
     } catch (error) {
         errorHandler(error, response);
     }
 }
+
+
+
 function Forecast(day) {
-    this.day = day.valid_date;
+    this.day = day.datetime;
     this.description = day.weather.description;
 }
 
